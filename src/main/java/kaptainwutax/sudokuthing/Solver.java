@@ -6,14 +6,30 @@ import kaptainwutax.sudokuthing.component.Line;
 import kaptainwutax.sudokuthing.component.Node;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class Solver {
 
     public static void main(String[] args) {
-        Board board = new Board(15, 15, (row, column) -> Node.UNKNOWN);
         //layout: [13990, 12482, 13724, 27119, 27454, 209, 12445, 31769, 24088, 480, 23973, 8943, 21815, 31556, 8284]
+        Board board = new Board(15, 15, (row, column) -> Node.UNKNOWN);
+        String hints = "";
+        //================================================================================================================//
+
+        /*
+        String[] lines = hints.split(Pattern.quote(";"), 2);
+
+        Hint[] rowHints = Arrays.stream(lines[0].split(Pattern.quote(","))).map(String::trim).map(s ->
+            new Hint(Arrays.stream(s.split(Pattern.quote(" "))).map(String::trim).mapToInt(Integer::parseInt).toArray())
+        ).toArray(Hint[]::new);
+
+        Hint[] columnHints = Arrays.stream(lines[1].split(Pattern.quote(","))).map(s ->
+            new Hint(Arrays.stream(s.split(Pattern.quote(" "))).map(String::trim).mapToInt(Integer::parseInt).toArray())
+        ).toArray(Hint[]::new);*/
+
         Hint[] rowHints = new Hint[] {
                 new Hint(2, 1, 1, 2, 2),
                 new Hint(1, 2, 2),
@@ -54,16 +70,29 @@ public class Solver {
     }
 
     public static void solve(Board board, Hint[] rowHints, Hint[] columnHints) {
-        if(checkComplete(board))return;
-
         List<Entry> entries = new ArrayList<>();
 
-        for(int i = 0; i < board.getRowCount(); i++) {
-            Line.View row = board.getRow(i);
-            List<Line> permutations = rowHints[i].getPermutations(board.getColumnCount(), row);
-            if(permutations.size() == 1 && permutations.get(0).equals(row))continue;
-            entries.add(new Entry(i, true, permutations));
+        for(int n = 0; n < 1; n++) {
+            boolean dirty = false;
+
+            for(int i = 0; i < board.getColumnCount(); i++) {
+                Line column = board.getColumn(i);
+                List<Line> permutations = columnHints[i].getPermutations(board.getRowCount(), column);
+                if(permutations.size() == 0)return;
+                dirty |= processPermutations(board, permutations, false, i);
+            }
+
+            for(int i = 0; i < board.getRowCount(); i++) {
+                Line.View row = board.getRow(i);
+                List<Line> permutations = rowHints[i].getPermutations(board.getColumnCount(), row);
+                if(permutations.size() == 0)return;
+                dirty |= processPermutations(board, permutations, true, i);
+            }
+
+            if(dirty)n--;
         }
+
+        if(checkComplete(board))return;
 
         for(int i = 0; i < board.getColumnCount(); i++) {
             Line column = board.getColumn(i);
@@ -72,17 +101,43 @@ public class Solver {
             entries.add(new Entry(i, false, permutations));
         }
 
-        //TODO: Improve whatever this shit is.
-        entries.sort(Comparator.comparingInt(value -> value.count));
-        Entry first = entries.get(0);
-        entries.clear();
-        entries.add(first);
+        for(int i = 0; i < board.getRowCount(); i++) {
+            Line.View row = board.getRow(i);
+            List<Line> permutations = rowHints[i].getPermutations(board.getColumnCount(), row);
+            if(permutations.size() == 1 && permutations.get(0).equals(row))continue;
+            entries.add(new Entry(i, true, permutations));
+        }
 
-        for(Entry entry: entries) {
+        entries.sort(Comparator.comparingInt(value -> value.count));
+
+        for(Entry entry: new ArrayList<>(entries)) {
             for(int i = 0; i < entry.count; i++) {
                 solve(entry.applyBoard(board, i), rowHints, columnHints);
             }
         }
+    }
+
+    private static boolean processPermutations(Board board, List<Line> permutations, boolean isRow, int index) {
+        if(permutations.size() == 0)return false;
+        Line mask = permutations.get(0).copy();
+
+        for(int i = 1; i < permutations.size(); i++) {
+            mask.andAndSet(permutations.get(i));
+        }
+
+        Line old = isRow ? board.getRow(index) : board.getColumn(index);
+        boolean dirty = false;
+
+        for(int i = 0; i < old.getDimension(); i++) {
+            Node oldValue = old.get(i);
+
+            if(oldValue != mask.get(i)) {
+                old.set(i, mask.get(i));
+                dirty = true;
+            }
+        }
+
+        return dirty;
     }
 
     private static boolean checkComplete(Board board) {
@@ -93,7 +148,7 @@ public class Solver {
         }
 
         System.out.println(board.toBinaryString());
-        System.out.println("============================================");
+        System.out.println("============================================" + board.hashCode());
         return true;
     }
 

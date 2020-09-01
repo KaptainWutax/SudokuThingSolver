@@ -75,6 +75,23 @@ public class Line {
         return true;
     }
 
+    public Line andAndSet(Line other) {
+        for(int i = 0; i < this.getDimension(); i++) {
+            Node a = this.get(i), b = other.get(i);
+            if(a != b)this.set(i, Node.UNKNOWN);
+        }
+
+        return this;
+    }
+
+    public boolean isComplete() {
+        for(int i = 0; i < this.getDimension(); i++) {
+            if(this.get(i) == Node.UNKNOWN)return false;
+        }
+
+        return true;
+    }
+
     public Line copy() {
         return new Line(this.getDimension(), this.toGenerator());
     }
@@ -107,7 +124,7 @@ public class Line {
         StringBuilder sb = new StringBuilder();
 
         for(int i = 0; i < this.getDimension(); i++) {
-            sb.append(this.get(i) == Node.UNKNOWN ? "-" : this.get(i) == Node.FILLED ? "X" : "-");
+            sb.append(this.get(i) == Node.UNKNOWN ? "?" : this.get(i) == Node.FILLED ? "X" : "-");
         }
 
         return sb.toString();

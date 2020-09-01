@@ -7,9 +7,8 @@ public class Line {
 
     public static long getPermutations(int size, int... hints) {
         int sum = Arrays.stream(hints).sum();
-        int trailing = size - sum + 1;
-        System.out.println(trailing + " choose " + (trailing - hints.length));
-        return Combinatorics.getCombinations(trailing, trailing - hints.length);
+        int trailing = size - sum + 1 - hints.length;
+        return Combinatorics.getCombinations(trailing + hints.length, trailing);
     }
 
     public static void permute(Predicate<LongPack> action, int size, int... hints) {

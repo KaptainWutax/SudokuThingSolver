@@ -49,4 +49,9 @@ public class Hint {
         return permutations;
     }
 
+    @Override
+    public String toString() {
+        return Arrays.toString(this.values);
+    }
+
 }

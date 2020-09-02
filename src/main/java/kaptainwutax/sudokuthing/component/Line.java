@@ -1,6 +1,9 @@
 package kaptainwutax.sudokuthing.component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class Line {
 
@@ -53,6 +56,27 @@ public class Line {
         return elements;
     }
 
+    public Hint getHint() {
+        List<Integer> hintList = new ArrayList<>();
+        int progress = 0;
+
+        for(int i = 0; i < this.getDimension(); i++) {
+            Node value = this.get(i);
+
+            if(value == Node.EMPTY) {
+                if(progress > 0)hintList.add(progress);
+                progress = 0;
+            } else if(value == Node.FILLED) {
+                progress++;
+            } else {
+                return null;
+            }
+        }
+
+        if(progress > 0)hintList.add(progress);
+        return new Hint(hintList.stream().mapToInt(i -> i).toArray());
+    }
+
     public Line map(Mapper mapper) {
         return new Line(this.getDimension(), index -> mapper.getNewValue(index, this.get(index)));
     }
@@ -90,6 +114,11 @@ public class Line {
         }
 
         return true;
+    }
+
+    public long pack() {
+        return IntStream.range(0, Math.min(this.getDimension(), 64))
+                .filter(i -> this.get(i) == Node.FILLED).mapToLong(i -> 1L << i).reduce(0L, (a, b) -> a | b);
     }
 
     public Line copy() {

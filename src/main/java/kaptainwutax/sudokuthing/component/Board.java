@@ -1,6 +1,6 @@
 package kaptainwutax.sudokuthing.component;
 
-import java.util.Arrays;
+import java.util.Random;
 
 public class Board {
 
@@ -20,6 +20,10 @@ public class Board {
         }
     }
 
+    public static Board random(int rows, int columns, Random random) {
+        return new Board(rows, columns, (row, column) -> random.nextBoolean() ? Node.FILLED : Node.EMPTY);
+    }
+
     public int getRowCount() {
         return this.elements.length;
     }
@@ -30,6 +34,28 @@ public class Board {
 
     public boolean isSquare() {
         return this.getRowCount() == this.getColumnCount();
+    }
+
+    public Hint[] getRowHints() {
+        Hint[] hints = new Hint[this.getRowCount()];
+
+        for(int i = 0; i < this.getRowCount(); i++) {
+            Line row = this.getRow(i);
+            hints[i] = row.getHint();
+        }
+
+        return hints;
+    }
+
+    public Hint[] getColumnHints() {
+        Hint[] hints = new Hint[this.getColumnCount()];
+
+        for(int i = 0; i < this.getColumnCount(); i++) {
+            Line row = this.getColumn(i);
+            hints[i] = row.getHint();
+        }
+
+        return hints;
     }
 
     public Generator toGenerator() {
@@ -127,7 +153,15 @@ public class Board {
 
     @Override
     public int hashCode() {
-        return this.getRowCount() * 961 + this.getColumnCount() * 31 + Arrays.hashCode(this.elements);
+        int result = 1;
+
+        for(int i = 0; i < this.getRowCount(); i++) {
+            for(int j = 0; j < this.getColumnCount(); j++) {
+                result = 31 * result + this.get(i, j).hashCode();
+            }
+        }
+
+        return this.getRowCount() * 961 + this.getColumnCount() * 31 + result;
     }
 
     @Override
